@@ -1,0 +1,67 @@
+### =====================================================================
+### Peticiones del EJEMPLO de referencia (paquete `ejemplo`)
+### Bórralas junto con el paquete ejemplo cuando termines.
+### =====================================================================
+
+### Catálogo de monedas soportadas -> 200 OK
+GET http://localhost:8080/api/v1/ejemplo/monedas
+
+### Cálculo válido -> 200 OK
+POST http://localhost:8080/api/v1/ejemplo/propinas
+Content-Type: application/json
+
+{
+  "montoCuenta": 200.00,
+  "porcentajePropina": 10,
+  "numeroPersonas": 4,
+  "moneda": "MXN"
+}
+
+### Falta un campo obligatorio -> 400 Bad Request (lo detiene @Valid)
+POST http://localhost:8080/api/v1/ejemplo/propinas
+Content-Type: application/json
+
+{
+  "porcentajePropina": 10,
+  "numeroPersonas": 4,
+  "moneda": "MXN"
+}
+
+### Valores fuera de rango -> 400 Bad Request
+### Los datos vienen completos y son números: lo que falla es el rango.
+### Si tu validación sólo cubriera @NotNull, este caso se colaría.
+POST http://localhost:8080/api/v1/ejemplo/propinas
+Content-Type: application/json
+
+{
+  "montoCuenta": 200.00,
+  "porcentajePropina": 250,
+  "numeroPersonas": 0,
+  "moneda": "MXN"
+}
+
+### Moneda inexistente -> 422 Unprocessable Entity (regla de negocio)
+### Sintácticamente impecable, semánticamente inválido.
+POST http://localhost:8080/api/v1/ejemplo/propinas
+Content-Type: application/json
+
+{
+  "montoCuenta": 200.00,
+  "porcentajePropina": 10,
+  "numeroPersonas": 4,
+  "moneda": "XYZ"
+}
+
+
+### =====================================================================
+### TUS PETICIONES
+### Agrega aquí las de tu API de cotización, incluyendo los casos de error.
+### Un buen set de peticiones cubre: el caso feliz, cada validación que
+### escribiste, y cada regla de negocio que decidiste implementar.
+### =====================================================================
+
+### TODO: consultar zonas soportadas
+
+### TODO: cotizar envío (caso válido)
+
+### TODO: cotizar envío (casos de error)
