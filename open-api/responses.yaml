@@ -1,22 +1,15 @@
 openapi: 3.0.3
 
-# ---------------------------------------------------------------------------------
-# El envoltorio HTTP de cada respuesta: que significa ese codigo y que cuerpo trae.
+# El envoltorio HTTP de cada respuesta: que significa el codigo y que cuerpo trae.
+# La forma de los datos no se define aqui, se apunta a resources.yaml: un mismo schema
+# se reusa en varias respuestas, y los errores en casi todas las rutas.
 #
-# Aqui NO se define la forma de los datos, solo se apunta a resources.yaml. La razon
-# de que este separado de los schemas es que una misma forma de datos se reusa en
-# varias respuestas, y un mismo error (400, 500) se reusa en casi todas las rutas.
-#
-# Una respuesta sin `content` es una respuesta sin cuerpo. Si declaras un codigo aqui
-# y no le pones content, le estas prometiendo al cliente un cuerpo vacio.
-# ---------------------------------------------------------------------------------
+# Una respuesta sin `content` promete un cuerpo vacio.
 
 components:
   responses:
 
-    # ===============================================================================
-    # TU API
-    # ===============================================================================
+    # === TU API ===
 
     CotizacionResponse:
       description: Cotizacion calculada correctamente.
@@ -28,7 +21,7 @@ components:
     ZonasResponse:
       description: |
         Catalogo de zonas soportadas. Una lista vacia sigue siendo 200: "no hay zonas"
-        es una respuesta valida a una pregunta bien hecha, no un error.
+        es una respuesta valida, no un error.
       content:
         application/json:
           schema:
@@ -36,15 +29,12 @@ components:
             items:
               $ref: './resources.yaml#/components/schemas/ZonaResource'
 
-    # ===============================================================================
-    # ERRORES  ·  compartidos por todas las rutas
-    # ===============================================================================
+    # === ERRORES · compartidos por todas las rutas ===
 
     BadRequest:
       description: |
-        El servidor no pudo procesar la peticion por un error del cliente: JSON mal
-        formado, un campo obligatorio ausente, un valor fuera de rango, un texto donde
-        iba un numero.
+        Error del cliente: JSON mal formado, campo obligatorio ausente, valor fuera de
+        rango, un texto donde iba un numero.
       content:
         application/json:
           schema:
@@ -52,8 +42,7 @@ components:
 
     UnprocessableEntity:
       description: |
-        La peticion esta bien formada y se entendio, pero su contenido incumple una
-        regla de negocio. Solo el dominio sabe que ese valor no se puede procesar.
+        La peticion se entendio, pero su contenido incumple una regla de negocio.
       content:
         application/json:
           schema:
@@ -61,16 +50,13 @@ components:
 
     InternalServerError:
       description: |
-        La peticion fallo por razones ajenas al cliente. No se expone el detalle
-        interno a proposito.
+        Fallo por razones ajenas al cliente. No se expone el detalle interno.
       content:
         application/json:
           schema:
             $ref: './resources.yaml#/components/schemas/ErrorResource'
 
-    # ===============================================================================
-    # EJEMPLO DE REFERENCIA
-    # ===============================================================================
+    # === EJEMPLO DE REFERENCIA ===
 
     PropinaResponse:
       description: Propina calculada correctamente.

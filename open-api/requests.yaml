@@ -1,31 +1,19 @@
 openapi: 3.0.3
 
-# ---------------------------------------------------------------------------------
 # Lo que ENTRA a la API.
 #
-# Las restricciones que escribes aqui (required, minLength, minimum, pattern...) se
-# convierten solas en anotaciones de Bean Validation sobre el modelo generado:
+# Las restricciones de aqui se vuelven anotaciones de Bean Validation en el modelo
+# generado: required -> @NotNull, minLength/maxLength -> @Size, minimum/maximum ->
+# @DecimalMin/@DecimalMax, pattern -> @Pattern. El @Valid lo pone el generador.
+# Si una restriccion no esta aqui, no existe en tiempo de ejecucion.
 #
-#   required          -> @NotNull
-#   minLength/maxLength -> @Size
-#   minimum/maximum   -> @DecimalMin / @DecimalMax
-#   pattern           -> @Pattern
-#
-# Es decir: ya no escribes @NotNull en un DTO, lo declaras en el contrato. El @Valid
-# del controller tambien lo pone el generador. Si una restriccion no esta aqui, no
-# existe en tiempo de ejecucion.
-#
-# Ojo con la diferencia que se evalua:
-#   - Validacion de FORMATO  -> va aqui, en el contrato.
-#   - Regla de NEGOCIO       -> no se puede expresar aqui, va en tu service.
-# ---------------------------------------------------------------------------------
+# Validacion de FORMATO va aqui; regla de NEGOCIO no se puede expresar y va en tu
+# service. Esa distincion se evalua.
 
 components:
   schemas:
 
-    # ===============================================================================
-    # TU API
-    # ===============================================================================
+    # === TU API ===
 
     CotizarEnvioRequest:
       type: object
@@ -42,9 +30,8 @@ components:
           minLength: 1
           maxLength: 60
         destino:
-          # El enum vive en enum.yaml y se referencia desde ambos lados. Asi el
-          # catalogo que devuelve GET /api/v1/zonas y lo que acepta este POST salen
-          # de la MISMA declaracion y no se pueden contradecir.
+          # El enum vive en enum.yaml y lo referencian los dos lados: el catalogo de
+          # GET /api/v1/zonas y este POST salen de la misma declaracion.
           $ref: './enum.yaml#/components/schemas/ZonaEjemplo'
         pesoKg:
           type: number
@@ -53,20 +40,11 @@ components:
           example: 12.5
           minimum: 0.01
           exclusiveMinimum: false
-          # ---------------------------------------------------------------------
-          # Nota: este contrato NO declara un peso maximo a proposito.
-          #
-          # El enunciado da dos reglas sobre el tope de peso. Decidir que significan
-          # juntas, cual es el limite real, y si el rechazo es de formato (aqui) o de
-          # negocio (tu service), es parte de lo que se evalua.
-          #
-          # Si concluyes que hay un tope duro que el contrato deberia rechazar,
-          # agregale un `maximum` y documenta por que.
-          # ---------------------------------------------------------------------
+          # TE TOCA A TI: no hay `maximum` a proposito. El enunciado da dos reglas
+          # sobre el tope de peso; decidir cual es el limite real y si el rechazo es
+          # de formato (aqui) o de negocio (tu service) es parte de lo que se evalua.
 
-    # ===============================================================================
-    # EJEMPLO DE REFERENCIA
-    # ===============================================================================
+    # === EJEMPLO DE REFERENCIA ===
 
     CalcularPropinaRequest:
       type: object

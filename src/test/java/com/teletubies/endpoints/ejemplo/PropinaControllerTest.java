@@ -18,21 +18,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Test de la capa web: verifica el CONTRATO REST, no la aritmetica.
+ * Test de la capa web: verifica el CONTRATO REST, no la aritmetica. Status codes, forma
+ * del JSON, y que las validaciones se disparen.
  *
- * @WebMvcTest levanta solo la porcion web del contexto (controllers, validacion,
- * serializacion JSON), no la aplicacion completa. Con @Import se agregan las piezas
- * colaboradoras que si se necesitan.
+ * @WebMvcTest levanta solo la porcion web del contexto. Fijate en QUE clase se prueba:
+ * PropinaApiController es codigo generado y es el que publica las rutas; tu
+ * PropinaDelegate va en el @Import, porque sin el el controller no sirve de nada.
  *
- * Fijate en QUE clase se prueba: PropinaApiController, que es codigo GENERADO y no existe
- * en el repositorio. Es el que publica las rutas. Tu PropinaDelegate va en el @Import,
- * porque el controller generado no sirve de nada sin alguien que implemente el delegate.
- *
- * Se usan el delegate y el servicio reales, no mocks: no tienen dependencias y son
- * deterministicos. Mockear aqui solo agregaria ceremonia sin ganar aislamiento.
- *
- * Lo que se prueba en este nivel: status codes, forma del JSON, y que las validaciones
- * realmente se disparen. Justo lo que tu ejercicio tiene que demostrar.
+ * Delegate y servicio reales, no mocks: no tienen dependencias y son deterministicos.
  */
 @WebMvcTest(PropinaApiController.class)
 @Import({PropinaDelegate.class, PropinaService.class, EjemploExceptionHandler.class})
@@ -75,8 +68,7 @@ class PropinaControllerTest {
     @Test
     @DisplayName("POST con campo obligatorio ausente responde 400")
     void campoAusenteResponde400() throws Exception {
-        // Falta montoCuenta. Lo detiene el @NotNull que el generador puso en el modelo a
-        // partir del `required` de requests.yaml: nunca llega al servicio.
+        // Falta montoCuenta: lo detiene el @NotNull que salio del `required` del YAML.
         final String cuerpo = """
                 {
                   "porcentajePropina": 10,
@@ -94,9 +86,8 @@ class PropinaControllerTest {
     @Test
     @DisplayName("POST con valor fuera de rango responde 400")
     void valorFueraDeRangoResponde400() throws Exception {
-        // El dato viene completo y es un numero: lo que falla es el RANGO, que sale del
-        // minimum/maximum del contrato. Si solo hubieras declarado `required`, este caso
-        // se colaria hasta el servicio.
+        // Viene completo y es un numero: lo que falla es el RANGO (minimum/maximum).
+        // Con solo `required`, este caso se colaria hasta el servicio.
         final String cuerpo = """
                 {
                   "montoCuenta": 200.00,
@@ -115,9 +106,7 @@ class PropinaControllerTest {
     @Test
     @DisplayName("POST con moneda fuera del enum del contrato responde 400")
     void monedaFueraDelEnumResponde400() throws Exception {
-        // Al declarar `moneda` como enum en enum.yaml, un valor inventado ni siquiera
-        // llega a deserializarse. Modelar el catalogo en el contrato te da esta validacion
-        // sin escribir una linea.
+        // Al ser un enum del contrato, un valor inventado ni siquiera deserializa.
         final String cuerpo = """
                 {
                   "montoCuenta": 200.00,
@@ -136,9 +125,8 @@ class PropinaControllerTest {
     @Test
     @DisplayName("POST que incumple una regla de negocio responde 422")
     void reglaDeNegocioResponde422() throws Exception {
-        // Sintacticamente impecable: cada campo respeta lo que declara el contrato. Lo que
-        // no se puede procesar es la COMBINACION, y eso solo lo sabe el servicio.
-        // Por eso 422 y no 400.
+        // Cada campo respeta el contrato; lo que no se puede procesar es la COMBINACION,
+        // y eso solo lo sabe el servicio. Por eso 422 y no 400.
         final String cuerpo = """
                 {
                   "montoCuenta": 0.01,

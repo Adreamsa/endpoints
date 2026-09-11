@@ -44,18 +44,11 @@
 		</dependency>
 
 		<!--
-			Lo que necesita el codigo que genera openapi-generator.
+			jackson-databind-nullable: la importa el codigo generado; sin ella no compila.
+			springdoc: sirve Swagger UI en /swagger-ui/index.html
 
-			jackson-databind-nullable: el generador lo importa en los modelos para poder
-			distinguir "el campo vino como null" de "el campo no vino". Sin esta
-			dependencia el codigo generado no compila.
-
-			springdoc: publica el contrato de la aplicacion ya corriendo y sirve Swagger
-			UI en http://localhost:8080/swagger-ui/index.html
-
-			NOTA: no declares io.swagger.core.v3:swagger-annotations con una version fija.
-			springdoc arrastra la que le corresponde; fijarla a mano rompe /v3/api-docs
-			en tiempo de ejecucion con NoSuchMethodError.
+			NO declares io.swagger.core.v3:swagger-annotations con version fija: springdoc
+			arrastra la suya, y fijarla rompe /v3/api-docs con NoSuchMethodError.
 		-->
 		<dependency>
 			<groupId>org.openapitools</groupId>
@@ -98,15 +91,10 @@
 			</plugin>
 
 			<!--
-				Genera, a partir de open-api/openapi.yaml y en cada compilacion:
-				  target/generated-sources/openapi/.../api/    interfaces + controllers
-				  target/generated-sources/openapi/.../model/  modelos de entrada y salida
+				Genera api/ (interfaces + controllers) y model/ desde open-api/openapi.yaml,
+				en la fase generate-sources: `make build` ya regenera solo.
 
-				Corre en la fase generate-sources, o sea ANTES de compilar: `make build`
-				ya regenera solo. `make openapi-generate` es para regenerar sin compilar.
-
-				NO edites lo generado: vive en target/ y se sobrescribe en cada build.
-				Lo que quieras cambiar, cambialo en el YAML.
+				NO edites lo generado: vive en target/ y se sobrescribe. Cambia el YAML.
 			-->
 			<plugin>
 				<groupId>org.openapitools</groupId>
@@ -125,19 +113,12 @@
 							<modelPackage>com.teletubies.endpoints.model</modelPackage>
 							<supportingFilesToGenerate>ApiUtil.java</supportingFilesToGenerate>
 							<configOptions>
-								<!--
-									delegatePattern: en vez de un controller que tienes que
-									editar, genera una interfaz XxxApiDelegate que TU
-									implementas. Asi el codigo generado se puede regenerar
-									siempre sin pisar lo tuyo.
-								-->
-								<delegatePattern>true</delegatePattern>
-								<!--
-									useTags: el nombre de la interfaz sale del `tags` de la
-									operacion. Sin esto saldria del primer segmento de la
-									ruta, y con /api/v1/... todo se llamaria ApiApiDelegate.
-								-->
-								<useTags>true</useTags>
+									<!-- Genera una interfaz XxxApiDelegate que implementas tu, en vez
+									     de un controller que tendrias que editar. -->
+									<delegatePattern>true</delegatePattern>
+									<!-- El nombre de la interfaz sale del `tags` de la operacion; sin
+									     esto saldria de la ruta y todo seria ApiApiDelegate. -->
+									<useTags>true</useTags>
 								<useJakartaEe>true</useJakartaEe>
 								<generateBuilders>true</generateBuilders>
 							</configOptions>
@@ -146,34 +127,18 @@
 								<typeMapping>Double=java.math.BigDecimal</typeMapping>
 							</typeMappings>
 							<!--
-								Un enum de open-api/enum.yaml se puede dejar generado, o se
-								puede mapear a una clase escrita a mano. Mapeado, el
-								contrato sigue documentando los valores validos, pero la
-								clase es tuya y puede llevar comportamiento: la descripcion
-								legible, una tarifa, un metodo de busqueda.
+								Un enum de enum.yaml se genera, salvo que lo mapees a una clase tuya.
+								Mapeado, el contrato sigue documentando los valores pero la clase es
+								tuya y puede llevar comportamiento (ver Moneda.java).
 
-								Hacen falta las DOS listas, y hacen cosas distintas:
+								Hacen falta las dos listas:
 								  importMappings  el codigo generado importa TU clase
 								  schemaMappings  ademas, no genera una clase propia
+								Con solo la primera queda un enum huerfano en model/.
 
-								Con solo importMappings el resultado tambien compila, pero
-								queda un enum huerfano en model/ que nadie usa y que
-								aparece en el autocompletado del IDE junto al tuyo.
-
-								=========================================================
-								TE TOCA A TI
-
-								`ZonaEjemplo` apunta hoy a una clase de DEMOSTRACION que
-								vive en el paquete `ejemplo`. No son tus zonas: cuando
-								definas las tuyas, renombra el schema en enum.yaml, escribe
-								tu cotizacion/enums/Zona.java y cambia sus dos lineas de
-								abajo para que apunten ahi.
-								=========================================================
-
-								Al borrar el paquete `ejemplo` se van las dos clases que
-								estan mapeadas ahora mismo. Para entonces `Zona` ya debe
-								apuntar a la tuya, y el mapeo de `Moneda` hay que quitarlo:
-								si un mapeo apunta a una clase borrada, la build falla.
+								TE TOCA A TI: `ZonaEjemplo` apunta a una clase de demostracion. Cuando
+								definas tus zonas, escribe cotizacion/enums/Zona.java y reapunta sus
+								dos lineas.
 							-->
 							<importMappings>
 								<importMapping>ZonaEjemplo=com.teletubies.endpoints.ejemplo.enums.ZonaEjemplo</importMapping>

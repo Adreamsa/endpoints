@@ -1,59 +1,22 @@
 openapi: 3.0.3
 
-# ---------------------------------------------------------------------------------
-# Los catalogos de valores fijos de la API.
+# Los catalogos de valores fijos. Estan aparte porque un enum no es ni entrada ni
+# salida: viaja en la peticion y vuelve en la respuesta.
 #
-# Estan en su propio archivo porque los enums no son ni entrada ni salida: son de los
-# dos lados. `destino` viaja en la peticion y tambien vuelve en la respuesta, y tiene
-# que ser exactamente el mismo conjunto de valores en ambos casos. Ponerlos aparte
-# deja claro que son un vocabulario compartido y no un detalle de un endpoint.
-#
-# ---------------------------------------------------------------------------------
-# UN ENUM DE AQUI PUEDE NO GENERARSE
-#
-# Por defecto, el generador produce una clase para cada schema de este archivo, con sus
-# constantes y nada mas. Pero se le puede decir que use una clase TUYA en su lugar,
-# mapeandola en el pom.xml:
-#
-#     <importMapping>Moneda=com.teletubies.endpoints.ejemplo.enums.Moneda</importMapping>
-#     <schemaMapping>Moneda=com.teletubies.endpoints.ejemplo.enums.Moneda</schemaMapping>
-#
-# Eso le dice: "cuando veas el schema Moneda, no generes nada, usa esa clase". El
-# contrato sigue documentando los valores validos y Swagger UI los muestra igual.
-#
-# Por que vale la pena el rodeo: un enum generado solo puede tener sus valores. Uno
-# escrito a mano puede llevar comportamiento: la descripcion legible que necesita el
-# endpoint de catalogo, la tarifa asociada, un metodo de busqueda. Mira
-# `ejemplo/enums/Moneda.java` para verlo hecho.
-#
-# EL PRECIO: cuando mapeas un enum, este archivo y la clase Java tienen que decir lo
-# mismo, y nadie lo verifica por ti. Si agregas un valor en un solo lado, el contrato y
-# el codigo se contradicen.
-# ---------------------------------------------------------------------------------
+# Un enum de aqui se genera como todo lo demas, salvo que lo mapees en el pom.xml a una
+# clase tuya (importMapping + schemaMapping). Mapeado, el contrato sigue documentando los
+# valores validos pero la clase es tuya y puede llevar comportamiento: mira Moneda.java,
+# donde cada valor carga su descripcion. El precio: este archivo y la clase tienen que
+# decir lo mismo, y nadie lo verifica.
 
 components:
   schemas:
 
-    # -------------------------------------------------------------------------------
-    # TE TOCA A TI
-    #
-    # Se llama ZonaEjemplo y no Zona por una razon: estas tres zonas son UN EJEMPLO para
-    # que el contrato compile y puedas ver la forma completa de la API. NO son las zonas
-    # del ejercicio. El enunciado te pide que definas tu propia tabla de tarifas, y eso
-    # empieza por decidir cuales son tus zonas: pueden ser otras, pueden ser mas, pueden
-    # llamarse distinto.
-    #
-    # Este schema esta mapeado a `ejemplo/enums/ZonaEjemplo.java`, una clase de
-    # demostracion que vive en el paquete del ejemplo y desaparece cuando lo borres.
-    # Gracias a ella el proyecto arranca entero desde el primer `make run`.
-    #
-    # Lo que te toca:
-    #   1. Renombra este schema a `Zona` y pon TUS valores.
-    #   2. Actualiza los tres $ref que apuntan aqui (uno en requests.yaml, dos en
-    #      resources.yaml).
-    #   3. Escribe tu `cotizacion/enums/Zona.java`, copiando la forma de ZonaEjemplo.
-    #   4. Cambia las dos lineas del pom.xml para que apunten a la tuya.
-    # -------------------------------------------------------------------------------
+    # TE TOCA A TI: estas zonas son de muestra, no son las del ejercicio. Cuando definas
+    # las tuyas: renombra el schema a `Zona` con tus valores, actualiza los tres $ref que
+    # apuntan aqui (1 en requests.yaml, 2 en resources.yaml), escribe
+    # cotizacion/enums/Zona.java copiando la forma de ZonaEjemplo, y reapunta sus dos
+    # lineas en el pom.xml.
     ZonaEjemplo:
       type: string
       description: |
@@ -65,10 +28,7 @@ components:
         - NACIONAL
         - INTERNACIONAL
 
-    # -------------------------------------------------------------------------------
-    # EJEMPLO DE REFERENCIA. Borralo junto con el paquete `ejemplo`, y acuerdate de
-    # quitar tambien su <importMapping> del pom.xml.
-    # -------------------------------------------------------------------------------
+    # Del ejemplo de referencia.
     Moneda:
       type: string
       description: Moneda soportada por la calculadora de propinas.

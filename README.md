@@ -110,15 +110,14 @@ y nadie lo verifica por ti. Si agregas un valor en un solo lado, el contrato y e
 contradicen. Ése es el trueque, y es la razón de que todo lo demás sí se genere.
 
 > **El enum de zonas se llama `ZonaEjemplo`, y el nombre es una advertencia.** Está mapeado
-> a `ejemplo/enums/ZonaEjemplo.java`, una clase de demostración que vive en el paquete del
-> ejemplo y desaparece cuando lo borres. Gracias a ella el proyecto arranca entero desde el
-> primer `make run`, con descripciones incluidas.
+> a `ejemplo/enums/ZonaEjemplo.java`, una clase de demostración: gracias a ella el proyecto
+> arranca entero desde el primer `make run`, con descripciones incluidas.
 >
 > **Esas tres zonas no son las del ejercicio.** El enunciado te pide tu propia tabla de
-> tarifas, y eso empieza por decidir cuáles son tus zonas. El cambio son cuatro pasos:
-> renombra el schema a `Zona` en `enum.yaml` con tus valores, actualiza los tres `$ref` que
-> apuntan ahí, escribe tu `cotizacion/enums/Zona.java` copiando la forma de `ZonaEjemplo`, y
-> reapunta las dos líneas del `pom.xml`.
+> tarifas, y eso empieza por decidir cuáles son tus zonas. Son cuatro pasos: renombra el
+> schema a `Zona` en `enum.yaml` con tus valores, actualiza los tres `$ref` que apuntan ahí,
+> escribe tu `cotizacion/enums/Zona.java` copiando la forma de `ZonaEjemplo`, y reapunta las
+> dos líneas del `pom.xml`.
 
 ### Dónde se valida qué
 
@@ -268,7 +267,7 @@ open-api/                       ← EL CONTRATO. De aquí salen controllers y mo
 src/main/java/com/teletubies/endpoints/
 ├── EndpointsApplication.java
 │
-├── ejemplo/                    ← EJEMPLO DE REFERENCIA. Léelo, y luego BÓRRALO.
+├── ejemplo/                    ← EJEMPLO DE REFERENCIA. Se queda: consúltalo.
 │   ├── delegate/                   capa web: implementa la interfaz generada, elige el status
 │   ├── service/                    capa de negocio: cálculo y reglas, SIN estado
 │   ├── enums/                      los catálogos escritos a mano (Moneda, ZonaEjemplo)
@@ -295,20 +294,11 @@ El paquete `ejemplo` implementa una **calculadora de propinas**: un `POST` que c
 otro dominio, para que veas cómo se reparten las responsabilidades entre capas sin darte
 resuelta ninguna decisión de las que se evalúan.
 
-> **Bórralo antes de entregar.** Son cuatro lugares, no uno:
+> **Déjalo donde está**: es material de consulta y se queda en la entrega. El límite de
+> **2 endpoints** aplica sólo a tu API de cotización; los del ejemplo no cuentan.
 >
-> 1. El paquete `ejemplo/` y su carpeta de tests.
-> 2. Sus dos rutas y sus schemas en `open-api/` — están marcados con un encabezado que dice
->    `EJEMPLO DE REFERENCIA`, incluido el enum `Moneda` en `enum.yaml`.
-> 3. Los mapeos de `Moneda` en el `pom.xml` (`importMapping` y `schemaMapping`).
-> 4. **Antes que nada, tu `Zona` tiene que haber sustituido a `ZonaEjemplo`**, porque esa
->    clase también se va con el paquete y el contrato de cotización la está usando.
->
-> Si borras el código pero dejas el contrato, Maven regenera un `PropinaApiController` sin
-> delegate que lo implemente y tu API publica dos rutas que responden 501. Y si dejas el
-> mapeo apuntando a una clase que ya borraste, **la compilación falla**. El límite de
-> **2 endpoints** aplica a tu API de cotización; los del ejemplo no cuentan, pero tampoco
-> deben quedarse en la entrega.
+> Lo único suyo que sí tienes que sustituir es `ZonaEjemplo`, porque tu contrato de
+> cotización lo está usando y esas no son tus zonas.
 
 ### Qué mirar en el ejemplo
 

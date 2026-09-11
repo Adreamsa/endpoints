@@ -1,26 +1,18 @@
 openapi: 3.0.3
 
-# ---------------------------------------------------------------------------------
-# Lo que SALE de la API.
-#
-# Los enums que aparecen aqui no se definen en este archivo: viven en enum.yaml,
-# porque los comparten la entrada y la salida. Este archivo solo los referencia.
-#
-# Convencion de nombres: los schemas de salida terminan en `Resource`.
-# ---------------------------------------------------------------------------------
+# Lo que SALE de la API. Los schemas terminan en `Resource`.
+# Los enums no se definen aqui: viven en enum.yaml y este archivo solo los referencia.
 
 components:
   schemas:
 
-    # ===============================================================================
-    # TU API
-    # ===============================================================================
+    # === TU API ===
 
     CotizacionResource:
       type: object
       description: |
         Resultado de la cotizacion. Se devuelve el desglose y no solo el total, para
-        que el cliente no tenga que reimplementar el calculo y llegar a otro numero.
+        que el cliente no reimplemente el calculo y llegue a otro numero.
       required:
         - origen
         - destino
@@ -63,10 +55,9 @@ components:
     ZonaResource:
       type: object
       description: |
-        Entrada del catalogo de zonas. Se devuelve el codigo (lo que el cliente debe
-        mandar de vuelta en el POST) junto con la descripcion (lo que le muestra al
-        usuario). Un catalogo de strings planos obliga al front a inventar sus propias
-        etiquetas, y ahi es donde se desincronizan.
+        Entrada del catalogo de zonas: el codigo que el cliente manda de vuelta en el
+        POST, mas la descripcion que le muestra al usuario. Un catalogo de strings
+        planos obliga al front a inventar sus propias etiquetas.
       required:
         - codigo
         - descripcion
@@ -78,15 +69,13 @@ components:
           example: Envio dentro del territorio nacional
           description: Texto legible para mostrar al usuario final.
 
-    # ===============================================================================
-    # ERRORES
-    # ===============================================================================
+    # === ERRORES ===
 
     ErrorResource:
       type: object
       description: |
-        Cuerpo de error de la API. Que el contrato de error tenga forma declarada, y
-        que sea la MISMA en todos los endpoints, es parte de lo que se evalua.
+        Cuerpo de error de la API. Que tenga forma declarada, y que sea la misma en
+        todos los endpoints, es parte de lo que se evalua.
       required:
         - timestamp
         - status
@@ -113,7 +102,7 @@ components:
         detalles:
           type: array
           description: |
-            Un @Valid puede fallar en varios campos a la vez. Devolver solo el primero
+            Un @Valid puede fallar en varios campos a la vez; devolver solo el primero
             deja al cliente corrigiendo de uno en uno.
           items:
             $ref: '#/components/schemas/ErrorDetalleResource'
@@ -134,9 +123,7 @@ components:
           example: debe ser mayor que 0
           description: Que se esperaba de ese campo.
 
-    # ===============================================================================
-    # EJEMPLO DE REFERENCIA
-    # ===============================================================================
+    # === EJEMPLO DE REFERENCIA ===
 
     PropinaResource:
       type: object

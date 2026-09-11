@@ -5,15 +5,14 @@ import java.math.BigDecimal;
 /**
  * Excepcion de negocio del ejemplo.
  *
- * Fijate en lo que NO tiene: ninguna anotacion de Spring, ningun codigo HTTP.
- * La excepcion describe QUE paso en terminos del negocio; traducir eso a un status
- * es responsabilidad de la capa web (ver EjemploExceptionHandler).
+ * Fijate en lo que NO tiene: ninguna anotacion de Spring, ningun codigo HTTP. Describe
+ * QUE paso en terminos del negocio; traducirlo a un status es de la capa web.
  *
- * Es RuntimeException (unchecked) a proposito: obligar a la capa web a hacer try/catch
- * de cada regla de negocio solo agrega ruido, para eso existe el @RestControllerAdvice.
+ * Es RuntimeException a proposito: obligar a la capa web a un try/catch por cada regla
+ * solo agrega ruido, para eso existe el @RestControllerAdvice.
  *
- * Guarda los datos que provocaron el fallo, no solo el mensaje ya armado: quien la
- * atrapa puede necesitarlos para construir la respuesta o para el log.
+ * Guarda los datos que provocaron el fallo, no solo el mensaje ya armado: quien la atrapa
+ * puede necesitarlos para la respuesta o para el log.
  */
 public class MontoPorPersonaInsuficienteException extends RuntimeException {
 

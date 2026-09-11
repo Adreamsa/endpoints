@@ -14,45 +14,31 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Capa de servicio del ejemplo: aqui vive la logica de negocio.
+ * Capa de negocio del ejemplo.
  *
- * Reglas de la casa para esta capa:
- *  - SIN ESTADO. No hay atributos mutables, no se guarda nada entre llamadas. La clase es
- *    un singleton compartido por todos los hilos; un atributo mutable seria un bug de
- *    concurrencia. Las unicas constantes son static final.
- *  - No conoce HTTP. Aqui no se importa ResponseEntity ni HttpStatus. Si el negocio falla,
- *    se lanza una excepcion de dominio y alguien mas decide el status.
- *  - Recibe y devuelve los modelos que genero el contrato, ya validados. Las validaciones
- *    de FORMATO las resolvio Bean Validation antes de llegar aqui, a partir de lo que
- *    declaraste en requests.yaml.
+ * Reglas de la casa:
+ *  - SIN ESTADO. Es un singleton compartido por todos los hilos; un atributo mutable
+ *    seria un bug de concurrencia. Solo constantes static final.
+ *  - No conoce HTTP. Aqui no se importa ResponseEntity ni HttpStatus: si el negocio
+ *    falla, se lanza una excepcion de dominio y otro decide el status.
  *
- * ---------------------------------------------------------------------------------
- * QUE PUEDE Y QUE NO PUEDE VALIDAR EL CONTRATO
+ * QUE VALIDA EL CONTRATO Y QUE VALIDA ESTA CAPA (la distincion que se evalua):
  *
- * Lee esto, porque es exactamente la distincion que se evalua en tu ejercicio.
+ * El contrato valida un campo a la vez contra un limite fijo. "montoCuenta >= 0.01" es
+ * un `minimum` en requests.yaml; "moneda debe ser MXN, USD o EUR" es un enum en
+ * enum.yaml, y por eso un "XYZ" ni siquiera llega hasta aqui: lo rechaza Jackson con un
+ * 400. Modelar el catalogo en el contrato da esa validacion gratis.
  *
- * El contrato valida un campo a la vez, contra un limite fijo:
- *   "montoCuenta debe ser >= 0.01"            -> minimum, en requests.yaml
- *   "moneda debe ser MXN, USD o EUR"          -> enum, en enum.yaml
- *
- * Fijate en la segunda: al declarar `moneda` como enum en el contrato, un "XYZ" ya ni
- * siquiera llega hasta aqui. Jackson lo rechaza al deserializar y sale un 400. Modelar
- * el catalogo en el contrato te da esa validacion gratis, y de paso documenta los
- * valores validos en Swagger UI.
- *
- * Lo que el contrato NO puede expresar es una regla que dependa de VARIOS campos a la
- * vez, o del resultado de un calculo. Esa es la que se queda aqui abajo, y es la que
- * justifica que exista una capa de servicio.
- * ---------------------------------------------------------------------------------
+ * Lo que el contrato no puede expresar es una regla que dependa de varios campos a la
+ * vez, o del resultado de un calculo. Esa se queda aqui, y es lo que justifica la capa.
  */
 @Slf4j
 @Service
 public class PropinaService {
 
     /**
-     * Escala y modo de redondeo fijos para todo el dinero que produce el servicio.
-     * Es una decision que vale la pena documentar: sin esto, dos endpoints del mismo
-     * sistema pueden redondear distinto y no cuadrar por un centavo.
+     * Escala y redondeo fijos para todo el dinero del servicio. Sin esto, dos endpoints
+     * del mismo sistema pueden redondear distinto y no cuadrar por un centavo.
      */
     private static final int ESCALA_MONETARIA = 2;
     private static final RoundingMode REDONDEO = RoundingMode.HALF_UP;
@@ -63,15 +49,9 @@ public class PropinaService {
     private static final BigDecimal MINIMO_POR_PERSONA = new BigDecimal("0.01");
 
     /**
-     * Devuelve el catalogo de monedas soportadas.
-     *
-     * Este metodo es la razon de existir del endpoint GET: el cliente necesita saber que
-     * valores puede mandar ANTES de intentar el POST y comerse un error.
-     *
-     * Fijate en que no hay ninguna lista de monedas escrita aqui: se recorre el enum, y
-     * cada valor ya trae su descripcion. Si agregas una moneda a Moneda.java (y a
-     * enum.yaml), aparece en este catalogo sola. Si la etiqueta viviera en un Map aparte,
-     * tendrias dos sitios que mantener sincronizados en vez de uno.
+     * Catalogo de monedas. No hay ninguna lista escrita aqui: se recorre el enum, y cada
+     * valor ya trae su descripcion. Agregar una moneda a Moneda.java (y a enum.yaml) la
+     * hace aparecer sola.
      */
     public List<MonedaResource> obtenerMonedasSoportadas() {
         return Arrays.stream(Moneda.values())
@@ -83,8 +63,6 @@ public class PropinaService {
     }
 
     /**
-     * Calcula la propina.
-     *
      * @throws MontoPorPersonaInsuficienteException si el reparto deja a cada persona por
      *         debajo de la unidad minima de la moneda.
      */
@@ -100,18 +78,12 @@ public class PropinaService {
         final BigDecimal totalPorPersona = total
                 .divide(BigDecimal.valueOf(request.getNumeroPersonas()), ESCALA_MONETARIA, REDONDEO);
 
-        // ESTA es la regla que ninguna anotacion puede expresar.
-        //
-        // Cada campo por separado es perfectamente valido: 0.01 es un monto legal y 100
-        // es un numero de personas legal. Lo invalido es la COMBINACION, y solo se sabe
-        // despues de dividir. El contrato no tiene forma de declararlo; el servicio si.
-        //
-        // Cuando en tu ejercicio te preguntes "esto va en el YAML o en el service?", la
-        // pregunta util es: se puede decidir mirando un solo campo contra un limite fijo?
+        // La regla que ninguna anotacion puede expresar: 0.01 es un monto valido y 100 un
+        // numero de personas valido; lo invalido es la combinacion, y solo se sabe tras
+        // dividir. Cuando dudes entre YAML y service, preguntate: se puede decidir
+        // mirando un solo campo contra un limite fijo?
         if (totalPorPersona.compareTo(MINIMO_POR_PERSONA) < 0) {
-            // WARN y no ERROR: que un cliente pida un reparto imposible es un uso
-            // incorrecto de la API, no una falla del sistema. Reservar ERROR para lo que
-            // de verdad esta roto es lo que hace que las alertas sirvan.
+            // WARN y no ERROR: es un uso incorrecto de la API, no una falla del sistema.
             log.warn("Reparto imposible: total={} entre {} personas", total, request.getNumeroPersonas());
             throw new MontoPorPersonaInsuficienteException(total, request.getNumeroPersonas());
         }

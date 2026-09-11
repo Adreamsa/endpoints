@@ -1,20 +1,10 @@
 openapi: 3.0.3
 
-# ---------------------------------------------------------------------------------
-# Este archivo declara SOLO las rutas: que verbo, en que path, con que tag, y a que
-# schema apunta cada peticion y cada respuesta.
-#
-# Ningun schema se define aqui. Todo se referencia con $ref hacia los otros tres
-# archivos, para que este quede legible como indice de la API:
-#
-#   requests.yaml    lo que entra
-#   resources.yaml   lo que sale (y los enums, que comparten ambos lados)
-#   responses.yaml   el envoltorio HTTP de cada respuesta
+# Solo las rutas. Ningun schema se define aqui: todo va por $ref a requests.yaml
+# (lo que entra), resources.yaml (lo que sale) y responses.yaml (el envoltorio HTTP).
 #
 # El `tags` de cada operacion decide el nombre de la interfaz Java generada:
-# tag `cotizacion` -> CotizacionApi / CotizacionApiDelegate. Por eso los tags
-# son singulares y en minusculas.
-# ---------------------------------------------------------------------------------
+# tag `cotizacion` -> CotizacionApi / CotizacionApiDelegate.
 
 info:
   title: API de Cotizacion de Envios
@@ -38,9 +28,7 @@ tags:
 
 paths:
 
-  # =================================================================================
-  # TU API  ·  paquete com.teletubies.endpoints.cotizacion
-  # =================================================================================
+  # === TU API · paquete com.teletubies.endpoints.cotizacion ===
 
   '/api/v1/cotizaciones':
     post:
@@ -62,20 +50,10 @@ paths:
           $ref: './responses.yaml#/components/responses/CotizacionResponse'
         "400":
           $ref: './responses.yaml#/components/responses/BadRequest'
-        # -------------------------------------------------------------------------
-        # TE TOCA A TI
-        #
-        # Falta la respuesta de regla de negocio incumplida: destino no soportado, o
-        # paquete por encima del maximo. Ese caso NO es un 400 —el request esta bien
-        # formado y se entendio— y hoy este contrato no lo declara.
-        #
-        # 1. Declara la response en responses.yaml (mira UnprocessableEntity ahi).
-        # 2. Referenciala aqui abajo, con el codigo que decidas.
-        # 3. Regenera:  make openapi-generate
-        # 4. Manejala en tu @RestControllerAdvice.
-        #
-        # Documenta en el README que codigo elegiste y por que.
-        # -------------------------------------------------------------------------
+        # TE TOCA A TI: falta la respuesta de regla de negocio incumplida (destino no
+        # soportado, exceso de peso). No es un 400: el request esta bien formado.
+        # Declarala en responses.yaml, referenciala aqui, regenera, y manejala en tu
+        # @RestControllerAdvice. Documenta en el README que codigo elegiste.
         "500":
           $ref: './responses.yaml#/components/responses/InternalServerError'
 
@@ -93,12 +71,10 @@ paths:
         "500":
           $ref: './responses.yaml#/components/responses/InternalServerError'
 
-  # =================================================================================
-  # EJEMPLO DE REFERENCIA  ·  paquete com.teletubies.endpoints.ejemplo
+  # === EJEMPLO DE REFERENCIA · paquete com.teletubies.endpoints.ejemplo ===
   #
   # Misma forma que tu API (un POST que calcula y un GET de catalogo) pero de otro
-  # dominio. Leelo, y luego borra estas dos rutas junto con el paquete `ejemplo`.
-  # =================================================================================
+  # dominio. Esta aqui para que te guies; no cuenta para tu limite de 2 endpoints.
 
   '/api/v1/ejemplo/propinas':
     post:
