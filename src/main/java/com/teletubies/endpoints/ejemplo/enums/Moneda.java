@@ -1,4 +1,4 @@
-package com.teletubies.endpoints.ejemplo;
+package com.teletubies.endpoints.ejemplo.enums;
 
 import java.util.Arrays;
 import java.util.Optional;

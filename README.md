@@ -31,9 +31,103 @@ tener Maven instalado, porque el wrapper descarga la versión correcta la primer
 En Windows el `Makefile` sí usa el `mvn` del sistema, así que si vas por la vía de `make`
 necesitas Maven instalado; si no lo tienes, usa la columna del wrapper.
 
-Para probar los endpoints sin cliente HTTP externo, hay peticiones listas en
-[`docs/peticiones.http`](docs/peticiones.http) (IntelliJ IDEA y VS Code con la extensión
-REST Client las ejecutan con un clic).
+---
+
+## Cómo probar los endpoints
+
+Con la aplicación corriendo (`make run`), los ejemplos de abajo usan los endpoints del
+paquete `ejemplo`. Cambia rutas y cuerpos por los tuyos cuando los tengas.
+
+La vía más cómoda es el archivo [`docs/peticiones.http`](docs/peticiones.http): IntelliJ IDEA
+y VS Code (con la extensión *REST Client*) ejecutan cada petición con un clic, sin pelearte
+con comillas. Si prefieres la terminal, sigue leyendo.
+
+### Trampas de Windows (léelas antes de reportar que "no funciona")
+
+Estas cuatro cosas están verificadas en Windows 11, y son la causa del 90% de los tropiezos:
+
+| Situación | Qué pasa |
+|---|---|
+| `curl` en **Windows PowerShell 5.1** | Es un **alias de `Invoke-WebRequest`**, no es curl. Tus flags (`-X`, `-d`, `-H`) no significan lo mismo y el comando falla. Escribe `curl.exe` para forzar el curl real |
+| `curl` en **PowerShell 7+** | Ahí sí es el curl real (`C:\Windows\System32\curl.exe`). Aun así, escribir `curl.exe` te hace inmune a la versión |
+| Comillas del JSON | `cmd.exe` necesita `\"` escapado. **PowerShell no**: ahí el escape `\"` se rompe y el servidor te responde `400`. En PowerShell usa comillas simples envolviendo el JSON |
+| `Invoke-RestMethod` con un `4xx` | **Lanza una excepción y nunca ves el cuerpo del error.** Justo lo que necesitas inspeccionar en este ejercicio. Usa `Invoke-WebRequest ... -SkipHttpErrorCheck` |
+
+### Linux / macOS / Git Bash
+
+```bash
+# GET del catálogo -> 200
+curl -s http://localhost:8080/api/v1/ejemplo/monedas
+
+# POST válido -> 200   (-s silencia la barra de progreso, -i muestra headers y código de estado)
+curl -s -i -X POST http://localhost:8080/api/v1/ejemplo/propinas   -H "Content-Type: application/json"   -d '{"montoCuenta":200.00,"porcentajePropina":10,"numeroPersonas":4,"moneda":"MXN"}'
+
+# Fuera de rango -> 400
+curl -s -i -X POST http://localhost:8080/api/v1/ejemplo/propinas   -H "Content-Type: application/json"   -d '{"montoCuenta":200.00,"porcentajePropina":250,"numeroPersonas":0,"moneda":"MXN"}'
+
+# Regla de negocio -> 422
+curl -s -i -X POST http://localhost:8080/api/v1/ejemplo/propinas   -H "Content-Type: application/json"   -d '{"montoCuenta":200.00,"porcentajePropina":10,"numeroPersonas":4,"moneda":"XYZ"}'
+```
+
+### Windows — CMD
+
+El JSON va entre comillas dobles, con las de dentro escapadas como `\"`:
+
+```bat
+curl -s http://localhost:8080/api/v1/ejemplo/monedas
+
+curl -s -i -X POST http://localhost:8080/api/v1/ejemplo/propinas -H "Content-Type: application/json" -d "{\"montoCuenta\":200.00,\"porcentajePropina\":10,\"numeroPersonas\":4,\"moneda\":\"MXN\"}"
+```
+
+### Windows — PowerShell (con curl.exe)
+
+Aquí el JSON va entre **comillas simples**, sin escapar nada:
+
+```powershell
+curl.exe -s http://localhost:8080/api/v1/ejemplo/monedas
+
+curl.exe -s -i -X POST http://localhost:8080/api/v1/ejemplo/propinas `
+  -H "Content-Type: application/json" `
+  -d '{"montoCuenta":200.00,"porcentajePropina":10,"numeroPersonas":4,"moneda":"MXN"}'
+```
+
+### Windows — PowerShell nativo
+
+`Invoke-RestMethod` es cómodo porque te devuelve el JSON ya convertido en objeto:
+
+```powershell
+# GET -> objeto de PowerShell, formateado como tabla
+Invoke-RestMethod -Uri http://localhost:8080/api/v1/ejemplo/monedas
+
+# POST válido
+$body = '{"montoCuenta":200.00,"porcentajePropina":10,"numeroPersonas":4,"moneda":"MXN"}'
+Invoke-RestMethod -Uri http://localhost:8080/api/v1/ejemplo/propinas `
+  -Method Post -ContentType "application/json" -Body $body
+```
+
+**Para los casos de error usa `Invoke-WebRequest -SkipHttpErrorCheck`**, o la excepción te
+ocultará exactamente lo que querías leer:
+
+```powershell
+$body = '{"montoCuenta":200.00,"porcentajePropina":10,"numeroPersonas":4,"moneda":"XYZ"}'
+$r = Invoke-WebRequest -Uri http://localhost:8080/api/v1/ejemplo/propinas `
+  -Method Post -ContentType "application/json" -Body $body -SkipHttpErrorCheck
+
+$r.StatusCode   # 422
+$r.Content      # el cuerpo del error
+```
+
+> Verifica siempre el **código de estado**, no solo el cuerpo. Un endpoint que devuelve el
+> mensaje de error correcto con un `200 OK` está mal, y es de las cosas que se revisan.
+> Por eso los ejemplos usan `-i` (curl) y `$r.StatusCode` (PowerShell).
+
+### El puerto ya está ocupado
+
+Si al arrancar ves *Port 8080 was already in use*, levanta la app en otro puerto:
+
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.arguments=--server.port=18080
+```
 
 ---
 
@@ -44,16 +138,17 @@ src/main/java/com/teletubies/endpoints/
 ├── EndpointsApplication.java
 │
 ├── ejemplo/                    ← EJEMPLO DE REFERENCIA. Léelo, y luego BÓRRALO.
-│   ├── Moneda.java                 catálogo modelado como enum
 │   ├── controller/                 capa web: rutas, @Valid, códigos HTTP
 │   ├── service/                    capa de negocio: cálculo y reglas, SIN estado
 │   ├── dto/                        contratos de entrada y salida
+│   ├── enums/                      catálogo modelado como enum (Moneda)
 │   └── exception/                  excepción de negocio + su traducción a HTTP
 │
 └── cotizacion/                 ← AQUÍ VA TU SOLUCIÓN
     ├── controller/
     ├── service/
     ├── dto/
+    ├── enums/                      aquí va tu catálogo de zonas
     └── exception/
 ```
 
@@ -70,14 +165,13 @@ resuelta ninguna decisión de las que se evalúan.
 
 | Archivo | Qué te enseña |
 |---|---|
+| `enums/Moneda.java` | Modelar un catálogo como enum en vez de strings sueltos, para que la validación y el endpoint de catálogo no puedan contradecirse |
 | `dto/CalcularPropinaRequest.java` | Bean Validation más allá de `@NotNull`: rangos, escala, mensajes propios, y por qué los numéricos van como objeto y no como primitivo |
 | `service/PropinaService.java` | Dónde vive la lógica de negocio, por qué la capa no conoce HTTP, y la diferencia entre validar *formato* y validar *negocio* |
 | `controller/PropinaController.java` | `@Valid`, inyección por constructor, y por qué el `POST` responde `200` y no `201` |
 | `exception/EjemploExceptionHandler.java` | El mecanismo `@RestControllerAdvice` y el criterio `400` vs `422`. **Lee la advertencia del inicio del archivo** |
 | `controller/PropinaController.java` (bloque LOMBOK) | Qué genera realmente `@RequiredArgsConstructor` y `@Slf4j`, y por qué `final` no es opcional |
 | `PropinaServiceTest` / `PropinaControllerTest` | Probar negocio sin Spring, y probar el contrato REST con `@WebMvcTest` |
-
----
 
 ---
 

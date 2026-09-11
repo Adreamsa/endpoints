@@ -1,6 +1,6 @@
 package com.teletubies.endpoints.ejemplo.service;
 
-import com.teletubies.endpoints.ejemplo.Moneda;
+import com.teletubies.endpoints.ejemplo.enums.Moneda;
 import com.teletubies.endpoints.ejemplo.dto.CalcularPropinaRequest;
 import com.teletubies.endpoints.ejemplo.dto.CalcularPropinaResponse;
 import com.teletubies.endpoints.ejemplo.dto.MonedaSoportadaResponse;
