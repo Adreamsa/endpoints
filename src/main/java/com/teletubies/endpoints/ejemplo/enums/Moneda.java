@@ -1,7 +1,7 @@
 package com.teletubies.endpoints.ejemplo.enums;
 
-import java.util.Arrays;
-import java.util.Optional;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Catalogo del ejemplo, modelado como enum.
@@ -13,7 +13,27 @@ import java.util.Optional;
  *
  * Ojo: esto NO es persistencia ni estado entre requests. Es una constante del codigo, igual
  * que un archivo de configuracion. El ejercicio prohibe estado, no prohibe constantes.
+ *
+ * ---------------------------------------------------------------------------------
+ * ESTA CLASE NO SE GENERA
+ *
+ * El schema `Moneda` esta en open-api/enum.yaml, pero el pom.xml lo mapea aqui con
+ * <importMapping>. El contrato declara los valores; la clase la escribes tu.
+ *
+ * Fijate en lo que gana el enum por estar a mano: la descripcion legible. Un enum
+ * generado solo tendria MXN, USD y EUR, y el texto "Peso mexicano" habria que guardarlo
+ * aparte, en un Map dentro del servicio, lejos del valor al que pertenece. Aqui el codigo
+ * y su etiqueta viajan juntos, que es justo lo que necesita el endpoint de catalogo.
+ *
+ * El precio: enum.yaml y esta clase tienen que decir lo mismo. Nadie lo verifica por ti.
+ * ---------------------------------------------------------------------------------
+ *
+ * Nota de Lombok: @RequiredArgsConstructor genera el constructor a partir de los campos
+ * `final`, y @Getter genera getDescripcion(). Sin las dos anotaciones tendrias que
+ * escribir ambos a mano, que es exactamente el boilerplate que Lombok existe para evitar.
  */
+@Getter
+@RequiredArgsConstructor
 public enum Moneda {
 
     MXN("Peso mexicano"),
@@ -21,29 +41,4 @@ public enum Moneda {
     EUR("Euro");
 
     private final String descripcion;
-
-    Moneda(String descripcion) {
-        this.descripcion = descripcion;
-    }
-
-    public String getDescripcion() {
-        return descripcion;
-    }
-
-    /**
-     * Busca de forma tolerante (ignora mayusculas/minusculas y espacios sobrantes).
-     *
-     * Devuelve Optional en lugar de null o de lanzar la excepcion aqui: quien llama decide
-     * que significa "no existe" en su contexto. La capa de dominio no deberia estar
-     * eligiendo codigos HTTP.
-     */
-    public static Optional<Moneda> desdeCodigo(String codigo) {
-        if (codigo == null) {
-            return Optional.empty();
-        }
-        String normalizado = codigo.trim().toUpperCase();
-        return Arrays.stream(values())
-                .filter(moneda -> moneda.name().equals(normalizado))
-                .findFirst();
-    }
 }

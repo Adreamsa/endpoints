@@ -17,7 +17,9 @@ Content-Type: application/json
   "moneda": "MXN"
 }
 
-### Falta un campo obligatorio -> 400 Bad Request (lo detiene @Valid)
+### Falta un campo obligatorio -> 400 Bad Request
+### Lo detiene el @NotNull que el generador puso en el modelo a partir del
+### `required` de requests.yaml.
 POST http://localhost:8080/api/v1/ejemplo/propinas
 Content-Type: application/json
 
@@ -28,8 +30,9 @@ Content-Type: application/json
 }
 
 ### Valores fuera de rango -> 400 Bad Request
-### Los datos vienen completos y son números: lo que falla es el rango.
-### Si tu validación sólo cubriera @NotNull, este caso se colaría.
+### Los datos vienen completos y son números: lo que falla es el rango, que sale
+### del minimum/maximum declarado en requests.yaml. Si sólo hubieras declarado
+### `required`, este caso se colaría hasta el servicio.
 POST http://localhost:8080/api/v1/ejemplo/propinas
 Content-Type: application/json
 
@@ -40,8 +43,10 @@ Content-Type: application/json
   "moneda": "MXN"
 }
 
-### Moneda inexistente -> 422 Unprocessable Entity (regla de negocio)
-### Sintácticamente impecable, semánticamente inválido.
+### Moneda fuera del enum del contrato -> 400 Bad Request
+### Al declarar `moneda` como enum en resources.yaml, un valor inventado ni
+### siquiera llega a deserializarse. El catálogo modelado en el contrato te da
+### esta validación sin escribir una línea.
 POST http://localhost:8080/api/v1/ejemplo/propinas
 Content-Type: application/json
 
@@ -52,6 +57,20 @@ Content-Type: application/json
   "moneda": "XYZ"
 }
 
+### Regla de negocio -> 422 Unprocessable Entity
+### Cada campo respeta lo que declara el contrato; lo que no se puede procesar es
+### la COMBINACIÓN: repartir 0.01 entre 100 personas deja a cada una en cero.
+### Eso ninguna anotación lo puede expresar, sólo lo sabe el servicio.
+POST http://localhost:8080/api/v1/ejemplo/propinas
+Content-Type: application/json
+
+{
+  "montoCuenta": 0.01,
+  "porcentajePropina": 0,
+  "numeroPersonas": 100,
+  "moneda": "MXN"
+}
+
 
 ### =====================================================================
 ### TUS PETICIONES
@@ -60,8 +79,27 @@ Content-Type: application/json
 ### escribiste, y cada regla de negocio que decidiste implementar.
 ### =====================================================================
 
-### TODO: consultar zonas soportadas
+### Consultar zonas soportadas
+### Hoy responde 501 Not Implemented: la ruta existe porque está en el contrato,
+### pero nadie implementa el delegate todavía. Esa es tu señal de arranque.
+GET http://localhost:8080/api/v1/zonas
 
-### TODO: cotizar envío (caso válido)
+### Cotizar envío (caso válido)
+### También 501 hasta que implementes CotizacionApiDelegate.
+###
+### OJO con "destino": NACIONAL es un valor de ZonaEjemplo, el enum de muestra que
+### trae el contrato. NO son las zonas del ejercicio: en cuanto definas las tuyas en
+### open-api/enum.yaml, esta petición deja de ser válida y tienes que actualizarla.
+### Si la dejas sin tocar y el servidor te responde 400, es justo eso lo que pasó.
+POST http://localhost:8080/api/v1/cotizaciones
+Content-Type: application/json
+
+{
+  "origen": "Orizaba",
+  "destino": "NACIONAL",
+  "pesoKg": 12.5
+}
 
 ### TODO: cotizar envío (casos de error)
+### Cubre al menos: un campo obligatorio ausente, un peso inválido, y la regla de
+### negocio que hayas decidido implementar con el código que agregaste al contrato.

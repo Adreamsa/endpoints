@@ -1,0 +1,189 @@
+openapi: 3.0.3
+
+# ---------------------------------------------------------------------------------
+# Lo que SALE de la API.
+#
+# Los enums que aparecen aqui no se definen en este archivo: viven en enum.yaml,
+# porque los comparten la entrada y la salida. Este archivo solo los referencia.
+#
+# Convencion de nombres: los schemas de salida terminan en `Resource`.
+# ---------------------------------------------------------------------------------
+
+components:
+  schemas:
+
+    # ===============================================================================
+    # TU API
+    # ===============================================================================
+
+    CotizacionResource:
+      type: object
+      description: |
+        Resultado de la cotizacion. Se devuelve el desglose y no solo el total, para
+        que el cliente no tenga que reimplementar el calculo y llegar a otro numero.
+      required:
+        - origen
+        - destino
+        - pesoKg
+        - costoTotal
+        - diasEntrega
+      properties:
+        origen:
+          type: string
+          example: Orizaba
+          description: Lugar desde donde sale el paquete.
+        destino:
+          $ref: './enum.yaml#/components/schemas/ZonaEjemplo'
+        pesoKg:
+          type: number
+          format: double
+          example: 12.5
+          description: Peso cotizado, en kilogramos.
+        costoBase:
+          type: number
+          format: double
+          example: 150.00
+          description: Costo que corresponde a la zona de destino, sin recargos.
+        cargoSobrepeso:
+          type: number
+          format: double
+          example: 0.00
+          description: Recargo aplicado por exceso de peso. Cero si no aplica.
+        costoTotal:
+          type: number
+          format: double
+          example: 150.00
+          description: Lo que finalmente paga el cliente.
+        diasEntrega:
+          type: integer
+          format: int32
+          example: 3
+          description: Tiempo estimado de entrega, en dias habiles.
+
+    ZonaResource:
+      type: object
+      description: |
+        Entrada del catalogo de zonas. Se devuelve el codigo (lo que el cliente debe
+        mandar de vuelta en el POST) junto con la descripcion (lo que le muestra al
+        usuario). Un catalogo de strings planos obliga al front a inventar sus propias
+        etiquetas, y ahi es donde se desincronizan.
+      required:
+        - codigo
+        - descripcion
+      properties:
+        codigo:
+          $ref: './enum.yaml#/components/schemas/ZonaEjemplo'
+        descripcion:
+          type: string
+          example: Envio dentro del territorio nacional
+          description: Texto legible para mostrar al usuario final.
+
+    # ===============================================================================
+    # ERRORES
+    # ===============================================================================
+
+    ErrorResource:
+      type: object
+      description: |
+        Cuerpo de error de la API. Que el contrato de error tenga forma declarada, y
+        que sea la MISMA en todos los endpoints, es parte de lo que se evalua.
+      required:
+        - timestamp
+        - status
+        - codigo
+        - mensaje
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Momento en que se genero el error.
+        status:
+          type: integer
+          format: int32
+          example: 400
+          description: Codigo HTTP, repetido en el cuerpo para facilitar el log del cliente.
+        codigo:
+          type: string
+          example: VALIDACION_FALLIDA
+          description: Identificador estable del tipo de error, pensado para que el cliente lo compare.
+        mensaje:
+          type: string
+          example: La peticion tiene campos invalidos
+          description: Descripcion legible del error.
+        detalles:
+          type: array
+          description: |
+            Un @Valid puede fallar en varios campos a la vez. Devolver solo el primero
+            deja al cliente corrigiendo de uno en uno.
+          items:
+            $ref: '#/components/schemas/ErrorDetalleResource'
+
+    ErrorDetalleResource:
+      type: object
+      description: Un error puntual, atribuido al campo que lo provoco.
+      required:
+        - campo
+        - mensaje
+      properties:
+        campo:
+          type: string
+          example: pesoKg
+          description: Campo de la peticion que no paso la validacion.
+        mensaje:
+          type: string
+          example: debe ser mayor que 0
+          description: Que se esperaba de ese campo.
+
+    # ===============================================================================
+    # EJEMPLO DE REFERENCIA
+    # ===============================================================================
+
+    PropinaResource:
+      type: object
+      required:
+        - moneda
+        - montoCuenta
+        - porcentajePropina
+        - montoPropina
+        - total
+        - numeroPersonas
+        - totalPorPersona
+      properties:
+        moneda:
+          $ref: './enum.yaml#/components/schemas/Moneda'
+        montoCuenta:
+          type: number
+          format: double
+          example: 200.00
+        porcentajePropina:
+          type: integer
+          format: int32
+          example: 10
+        montoPropina:
+          type: number
+          format: double
+          example: 20.00
+        total:
+          type: number
+          format: double
+          example: 220.00
+        numeroPersonas:
+          type: integer
+          format: int32
+          example: 4
+        totalPorPersona:
+          type: number
+          format: double
+          example: 55.00
+
+    MonedaResource:
+      type: object
+      required:
+        - codigo
+        - descripcion
+      properties:
+        codigo:
+          $ref: './enum.yaml#/components/schemas/Moneda'
+        descripcion:
+          type: string
+          example: Peso mexicano

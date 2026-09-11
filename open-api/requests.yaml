@@ -1,0 +1,100 @@
+openapi: 3.0.3
+
+# ---------------------------------------------------------------------------------
+# Lo que ENTRA a la API.
+#
+# Las restricciones que escribes aqui (required, minLength, minimum, pattern...) se
+# convierten solas en anotaciones de Bean Validation sobre el modelo generado:
+#
+#   required          -> @NotNull
+#   minLength/maxLength -> @Size
+#   minimum/maximum   -> @DecimalMin / @DecimalMax
+#   pattern           -> @Pattern
+#
+# Es decir: ya no escribes @NotNull en un DTO, lo declaras en el contrato. El @Valid
+# del controller tambien lo pone el generador. Si una restriccion no esta aqui, no
+# existe en tiempo de ejecucion.
+#
+# Ojo con la diferencia que se evalua:
+#   - Validacion de FORMATO  -> va aqui, en el contrato.
+#   - Regla de NEGOCIO       -> no se puede expresar aqui, va en tu service.
+# ---------------------------------------------------------------------------------
+
+components:
+  schemas:
+
+    # ===============================================================================
+    # TU API
+    # ===============================================================================
+
+    CotizarEnvioRequest:
+      type: object
+      description: Datos del paquete a cotizar.
+      required:
+        - origen
+        - destino
+        - pesoKg
+      properties:
+        origen:
+          type: string
+          description: Lugar desde donde sale el paquete.
+          example: Orizaba
+          minLength: 1
+          maxLength: 60
+        destino:
+          # El enum vive en enum.yaml y se referencia desde ambos lados. Asi el
+          # catalogo que devuelve GET /api/v1/zonas y lo que acepta este POST salen
+          # de la MISMA declaracion y no se pueden contradecir.
+          $ref: './enum.yaml#/components/schemas/ZonaEjemplo'
+        pesoKg:
+          type: number
+          format: double
+          description: Peso del paquete en kilogramos.
+          example: 12.5
+          minimum: 0.01
+          exclusiveMinimum: false
+          # ---------------------------------------------------------------------
+          # Nota: este contrato NO declara un peso maximo a proposito.
+          #
+          # El enunciado da dos reglas sobre el tope de peso. Decidir que significan
+          # juntas, cual es el limite real, y si el rechazo es de formato (aqui) o de
+          # negocio (tu service), es parte de lo que se evalua.
+          #
+          # Si concluyes que hay un tope duro que el contrato deberia rechazar,
+          # agregale un `maximum` y documenta por que.
+          # ---------------------------------------------------------------------
+
+    # ===============================================================================
+    # EJEMPLO DE REFERENCIA
+    # ===============================================================================
+
+    CalcularPropinaRequest:
+      type: object
+      description: Cuenta a repartir y porcentaje de propina a aplicar.
+      required:
+        - montoCuenta
+        - porcentajePropina
+        - numeroPersonas
+        - moneda
+      properties:
+        montoCuenta:
+          type: number
+          format: double
+          description: Monto de la cuenta, antes de propina.
+          example: 200.00
+          minimum: 0.01
+        porcentajePropina:
+          type: integer
+          format: int32
+          description: Porcentaje de propina a aplicar sobre la cuenta.
+          example: 10
+          minimum: 0
+          maximum: 100
+        numeroPersonas:
+          type: integer
+          format: int32
+          description: Entre cuantas personas se reparte el total.
+          example: 4
+          minimum: 1
+        moneda:
+          $ref: './enum.yaml#/components/schemas/Moneda'

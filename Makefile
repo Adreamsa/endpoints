@@ -17,7 +17,7 @@ else
     MVNW = ./mvnw
 endif
 
-.PHONY: help build run test clean
+.PHONY: help build run test clean openapi-generate
 
 # Primer target del archivo = el que corre `make` sin argumentos.
 help:
@@ -26,6 +26,19 @@ help:
 	@echo "  make run     - levanta la aplicacion en http://localhost:8080"
 	@echo "  make test    - corre la suite de tests"
 	@echo "  make clean   - borra target/"
+	@echo "  make openapi-generate - regenera el codigo desde open-api/ sin compilar"
+
+# Regenera los controllers y modelos a partir de open-api/openapi.yaml.
+#
+# No siempre hace falta: el plugin corre en la fase generate-sources, asi que
+# `make build`, `make run` y `make test` ya regeneran solos. Este target es para
+# cuando editaste el YAML y quieres ver el codigo generado de inmediato, sin
+# esperar a una compilacion completa.
+#
+# Lo generado vive en target/generated-sources/openapi y se sobrescribe en cada
+# corrida: no lo edites, edita el YAML.
+openapi-generate:
+	$(MVNW) org.openapitools:openapi-generator-maven-plugin:generate@openapi
 
 # `clean install` recorre el ciclo de vida de Maven hasta la fase install:
 #

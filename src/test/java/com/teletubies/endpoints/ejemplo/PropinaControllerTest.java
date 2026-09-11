@@ -1,6 +1,7 @@
 package com.teletubies.endpoints.ejemplo;
 
-import com.teletubies.endpoints.ejemplo.controller.PropinaController;
+import com.teletubies.endpoints.api.PropinaApiController;
+import com.teletubies.endpoints.ejemplo.delegate.PropinaDelegate;
 import com.teletubies.endpoints.ejemplo.exception.EjemploExceptionHandler;
 import com.teletubies.endpoints.ejemplo.service.PropinaService;
 import org.junit.jupiter.api.DisplayName;
@@ -23,14 +24,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * serializacion JSON), no la aplicacion completa. Con @Import se agregan las piezas
  * colaboradoras que si se necesitan.
  *
- * Se usa el servicio real y no un mock porque no tiene dependencias y es deterministico.
- * Mockear aqui solo agregaria ceremonia sin ganar aislamiento.
+ * Fijate en QUE clase se prueba: PropinaApiController, que es codigo GENERADO y no existe
+ * en el repositorio. Es el que publica las rutas. Tu PropinaDelegate va en el @Import,
+ * porque el controller generado no sirve de nada sin alguien que implemente el delegate.
+ *
+ * Se usan el delegate y el servicio reales, no mocks: no tienen dependencias y son
+ * deterministicos. Mockear aqui solo agregaria ceremonia sin ganar aislamiento.
  *
  * Lo que se prueba en este nivel: status codes, forma del JSON, y que las validaciones
  * realmente se disparen. Justo lo que tu ejercicio tiene que demostrar.
  */
-@WebMvcTest(PropinaController.class)
-@Import({PropinaService.class, EjemploExceptionHandler.class})
+@WebMvcTest(PropinaApiController.class)
+@Import({PropinaDelegate.class, PropinaService.class, EjemploExceptionHandler.class})
 class PropinaControllerTest {
 
     @Autowired
@@ -49,7 +54,7 @@ class PropinaControllerTest {
     @Test
     @DisplayName("POST valido responde 200 con el desglose del calculo")
     void calculoValidoResponde200() throws Exception {
-        String cuerpo = """
+        final String cuerpo = """
                 {
                   "montoCuenta": 200.00,
                   "porcentajePropina": 10,
@@ -68,10 +73,11 @@ class PropinaControllerTest {
     }
 
     @Test
-    @DisplayName("POST con campo obligatorio ausente responde 400 (falla @Valid)")
+    @DisplayName("POST con campo obligatorio ausente responde 400")
     void campoAusenteResponde400() throws Exception {
-        // Falta montoCuenta: lo detiene Bean Validation, nunca llega al servicio.
-        String cuerpo = """
+        // Falta montoCuenta. Lo detiene el @NotNull que el generador puso en el modelo a
+        // partir del `required` de requests.yaml: nunca llega al servicio.
+        final String cuerpo = """
                 {
                   "porcentajePropina": 10,
                   "numeroPersonas": 4,
@@ -88,9 +94,10 @@ class PropinaControllerTest {
     @Test
     @DisplayName("POST con valor fuera de rango responde 400")
     void valorFueraDeRangoResponde400() throws Exception {
-        // El dato viene completo y es un numero: lo que falla es el RANGO.
-        // Si tu validacion solo cubriera @NotNull, este caso se colaria.
-        String cuerpo = """
+        // El dato viene completo y es un numero: lo que falla es el RANGO, que sale del
+        // minimum/maximum del contrato. Si solo hubieras declarado `required`, este caso
+        // se colaria hasta el servicio.
+        final String cuerpo = """
                 {
                   "montoCuenta": 200.00,
                   "porcentajePropina": 250,
@@ -106,10 +113,12 @@ class PropinaControllerTest {
     }
 
     @Test
-    @DisplayName("POST con moneda inexistente responde 422 (regla de negocio)")
-    void monedaNoSoportadaResponde422() throws Exception {
-        // Sintacticamente impecable, semanticamente invalido: por eso 422 y no 400.
-        String cuerpo = """
+    @DisplayName("POST con moneda fuera del enum del contrato responde 400")
+    void monedaFueraDelEnumResponde400() throws Exception {
+        // Al declarar `moneda` como enum en enum.yaml, un valor inventado ni siquiera
+        // llega a deserializarse. Modelar el catalogo en el contrato te da esta validacion
+        // sin escribir una linea.
+        final String cuerpo = """
                 {
                   "montoCuenta": 200.00,
                   "porcentajePropina": 10,
@@ -121,7 +130,28 @@ class PropinaControllerTest {
         mockMvc.perform(post("/api/v1/ejemplo/propinas")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(cuerpo))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST que incumple una regla de negocio responde 422")
+    void reglaDeNegocioResponde422() throws Exception {
+        // Sintacticamente impecable: cada campo respeta lo que declara el contrato. Lo que
+        // no se puede procesar es la COMBINACION, y eso solo lo sabe el servicio.
+        // Por eso 422 y no 400.
+        final String cuerpo = """
+                {
+                  "montoCuenta": 0.01,
+                  "porcentajePropina": 0,
+                  "numeroPersonas": 100,
+                  "moneda": "MXN"
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/ejemplo/propinas")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(cuerpo))
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.codigo").value("MONEDA_NO_SOPORTADA"));
+                .andExpect(jsonPath("$.codigo").value("MONTO_POR_PERSONA_INSUFICIENTE"));
     }
 }
