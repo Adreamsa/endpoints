@@ -12,20 +12,19 @@ openapi: 3.0.3
 components:
   schemas:
 
-    # TE TOCA A TI: estas zonas son de muestra, no son las del ejercicio. Cuando definas
-    # las tuyas: renombra el schema a `Zona` con tus valores, actualiza los tres $ref que
-    # apuntan aqui (1 en requests.yaml, 2 en resources.yaml), escribe
-    # cotizacion/enums/Zona.java copiando la forma de ZonaEjemplo, y reapunta sus dos
-    # lineas en el pom.xml.
-    ZonaEjemplo:
+    # Zonas de destino soportadas por la API de cotizacion.
+    # Mapeado en pom.xml a cotizacion/enums/Zona.java (importMapping + schemaMapping),
+    # por lo que el generador no produce una clase propia: la clase es manual y lleva
+    # costoBase y diasEntrega junto a cada valor.
+    Zona:
       type: string
       description: |
-        Zona de destino. Valores de EJEMPLO: defines los tuyos junto con tu tabla de
-        tarifas.
+        Zona de destino del envio. Determina el costo base y el tiempo de entrega.
       example: NACIONAL
       enum:
         - LOCAL
         - NACIONAL
+        - EXPRESS
         - INTERNACIONAL
 
     # Del ejemplo de referencia.
