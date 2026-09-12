@@ -1,7 +1,7 @@
-package com.iwa.curso.service;
+package com.teletubies.endpoints.cotizacion.service;
 
-import com.iwa.curso.model.QuoteRequest;
-import com.iwa.curso.model.QuoteResponse;
+import com.teletubies.endpoints.model.QuoteRequest;
+import com.teletubies.endpoints.model.QuoteResponse;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -15,9 +15,11 @@ public class ShipmentService {
 
         if (weight <= 50) {
             estimatedCost = 120.0;
-        } else {
+        } else if (weight <= 70){
             estimatedCost = 180.0;
-        }
+        }else
+            throw new IllegalArgumentException("El peso máximo permitido es de 70 kg");
+
 
         QuoteResponse response = new QuoteResponse();
 

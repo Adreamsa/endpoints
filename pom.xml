@@ -89,8 +89,8 @@
 							<inputSpec>${project.basedir}/open-api/open-api.yml</inputSpec>
 							<generatorName>spring</generatorName>
 							<output>${project.build.directory}/generated-sources/openapi</output>
-							<apiPackage>com.iwa.curso.controller</apiPackage>
-							<modelPackage>com.iwa.curso.model</modelPackage>
+							<apiPackage>com.teletubies.endpoints.controller</apiPackage>
+							<modelPackage>com.teletubies.endpoints.model</modelPackage>
 							<configOptions>
 								<interfaceOnly>true</interfaceOnly>
 								<useSpringBoot3>true</useSpringBoot3>
