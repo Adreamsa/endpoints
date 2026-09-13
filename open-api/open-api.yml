@@ -1,0 +1,127 @@
+openapi: 3.0.3
+
+info:
+  title: Shipping API
+  description: API para consultar zonas soportadas y cotizar envíos.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+
+paths:
+
+  /shipments/quote:
+    post:
+      summary: Cotizar envío
+      operationId: quoteShipment
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuoteRequest'
+
+      responses:
+        '200':
+          description: Cotización calculada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteResponse'
+
+        '400':
+          description: Datos inválidos, destino no soportado o peso mayor a 70 kg
+
+
+  /zones:
+    get:
+      summary: Consultar zonas soportadas
+      operationId: getSupportedZones
+
+      responses:
+        '200':
+          description: Lista de zonas soportadas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ZoneResponse'
+
+
+components:
+
+  schemas:
+
+    QuoteRequest:
+      type: object
+      required:
+        - origin
+        - destination
+        - weight
+
+      properties:
+        origin:
+          type: string
+          description: Lugar de origen del envío
+          example: Xalapa
+
+        destination:
+          type: string
+          description: Lugar de destino del envío
+          example: Veracruz
+
+        weight:
+          type: number
+          format: double
+          minimum: 0
+          description: >
+            Peso del paquete en kilogramos.
+            Hasta 50 kg se aplica tarifa estándar.
+            Más de 50 kg y hasta 70 kg se aplica tarifa especial.
+            Más de 70 kg se rechaza.
+          example: 10
+
+    QuoteResponse:
+      type: object
+
+      properties:
+        origin:
+          type: string
+          example: Xalapa
+
+        destination:
+          type: string
+          example: Veracruz
+
+        weight:
+          type: number
+          format: double
+          example: 10
+
+        zone:
+          type: string
+          example: REGIONAL
+
+        estimatedCost:
+          type: number
+          format: double
+          example: 120.00
+
+        estimatedDeliveryDays:
+          type: integer
+          example: 2
+
+
+    ZoneResponse:
+      type: object
+
+      properties:
+        code:
+          type: string
+          example: REGIONAL
+
+        name:
+          type: string
+          example: Regional
