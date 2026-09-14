@@ -54,6 +54,8 @@ paths:
         # soportado, exceso de peso). No es un 400: el request esta bien formado.
         # Declarala en responses.yaml, referenciala aqui, regenera, y manejala en tu
         # @RestControllerAdvice. Documenta en el README que codigo elegiste.
+        "422":
+          $ref: './responses.yaml#/components/responses/UnprocessableEntity'
         "500":
           $ref: './responses.yaml#/components/responses/InternalServerError'
 

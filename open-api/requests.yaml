@@ -32,7 +32,7 @@ components:
         destino:
           # El enum vive en enum.yaml y lo referencian los dos lados: el catalogo de
           # GET /api/v1/zonas y este POST salen de la misma declaracion.
-          $ref: './enum.yaml#/components/schemas/ZonaEjemplo'
+          $ref: './enum.yaml#/components/schemas/Zona'
         pesoKg:
           type: number
           format: double

@@ -410,73 +410,72 @@ Borra las instrucciones en cursiva conforme las vayas contestando.
 
 ### Qué agregaste al contrato
 
-*El contrato viene incompleto a propósito. Falta declarar la respuesta para cuando se
-incumple una regla de negocio, y `pesoKg` no tiene tope. Di qué agregaste a cada archivo
-YAML, con qué código HTTP, y por qué.*
-
 | Archivo | Qué agregaste | Por qué |
 |---|---|---|
-|  |  |  |
+| `enum.yaml` | Schema `Zona` con valores `LOCAL`, `NACIONAL`, `EXPRESS`, `INTERNACIONAL` | Reemplaza el schema de demostración `ZonaEjemplo`. Las zonas definen los destinos válidos del sistema. |
+| `requests.yaml` | `$ref` de `destino` actualizado a `Zona` | El campo `destino` del request debe apuntar al nuevo enum real. |
+| `resources.yaml` | `$ref` de `destino` y `codigo` actualizados a `Zona` | La respuesta devuelve la misma zona, debe ser el mismo tipo. |
+| `openapi.yaml` | Respuesta `"422"` en `POST /api/v1/cotizaciones` | Cubre el caso de sobrepeso (> 70 kg): el request está bien formado pero incumple una regla de negocio. Ya existía `UnprocessableEntity` en `responses.yaml`. |
+| `pom.xml` | `importMapping` y `schemaMapping` para `Zona` | Le indica al generador que no genere `Zona.java` sino que importe la clase manual, igual que `Moneda`. |
 
-*Y una decisión aparte: ¿cuáles son tus zonas, y con qué criterio las elegiste? Describe
-también cómo sustituiste `ZonaEjemplo` por tu propio enum.*
+Las zonas se definieron en `enum.yaml` con cuatro valores. `ZonaEjemplo` se renombró a `Zona` y se mapeó en `pom.xml` a `cotizacion/enums/Zona.java`, siguiendo exactamente el mismo mecanismo que usa `Moneda`.
 
 ### Decisiones de diseño
 
-*¿Cómo estructuraste la respuesta exitosa de cada endpoint? ¿Por qué esos campos? Si
-cambiaste algo del contrato que ya venía dado, dilo aquí y explica qué te llevó a ello.*
+**Tarifas en el enum, no en el service.** Cada valor de `Zona` carga su `costoBase` y `diasEntrega`. La alternativa era un `Map<Zona, BigDecimal>` dentro del service, pero eso separa el valor de sus datos: agregar una zona nueva obliga a actualizar el enum *y* acordarse de actualizar el Map. Poniéndolo en el enum, el compilador lo detecta: si no declaras los campos en el constructor, no compila.
+
+**`origen` como `String` libre.** El contrato valida `minLength: 1` y `maxLength: 60`, pero no restringe los valores a un catálogo. El enunciado no especifica una lista de orígenes válidos, y sería imposible cubrir todas las ciudades posibles. Si se quisiera restringir, se agregaría otro enum; por ahora es texto libre.
+
+**`200` y no `201` en el POST de cotizaciones.** Este endpoint calcula, no crea ningún recurso persistente. Un `201 Created` obligaría a devolver un `Location` header apuntando al recurso creado, y aquí no hay nada a qué apuntar.
 
 ### Supuestos asumidos
 
-*El enunciado deja cosas sin especificar a propósito. Lista lo que tuviste que decidir tú y
-con qué criterio. Por ejemplo: ¿qué pasa si el paquete pesa exactamente el máximo? ¿un envío
-`LOCAL` con origen en otro estado tiene sentido, y si no, quién lo detecta? ¿el tiempo de
-entrega depende sólo de la zona o también del peso?*
-
-*Ojo: el contrato ya resolvió algunos de esos huecos por ti — `destino` es un enum y `origen`
-es texto libre, por ejemplo. Eso también es una decisión de diseño: si no estás de acuerdo
-con ella, cámbiala en el YAML y documéntalo.*
+- **Peso exactamente en el umbral:** `pesoKg = 50.00` → tarifa normal (sin sobrecargo). `pesoKg = 70.00` → aceptado con sobrecargo. El límite es exclusivo por arriba: `> 70` se rechaza.
+- **`origen` no se valida contra un catálogo:** cualquier string entre 1 y 60 caracteres es válido. El sistema no conoce los orígenes posibles.
+- **El tiempo de entrega no depende del peso:** solo de la zona. Un paquete con sobrecargo dentro de una zona `LOCAL` sigue tardando 1 día hábil.
+- **El sobrecargo se aplica sobre los kg que exceden 50**, no sobre el total. Fórmula: `(pesoKg - 50) × $15.00 MXN`.
 
 ### Tabla de tarifas
 
-*Tus zonas, tus costos base, tus tiempos de entrega, y el criterio con el que elegiste esos
-números. Los valores son libres; lo que se evalúa es que exista un criterio y esté escrito.*
-
 | Zona | Costo base | Tiempo de entrega | Criterio |
 |---|---|---|---|
-|  |  |  |  |
+| `LOCAL` | $80.00 MXN | 1 día hábil | Envío dentro de la misma ciudad. Distancia mínima, sin logística de larga distancia. |
+| `NACIONAL` | $180.00 MXN | 3 días hábiles | Cualquier punto del país. Requiere traslado entre ciudades. |
+| `EXPRESS` | $350.00 MXN | 1 día hábil | Nacional con prioridad de procesamiento. Más caro que NACIONAL porque comparte la misma red pero con preferencia de carga y ruta. |
+| `INTERNACIONAL` | $950.00 MXN | 10 días hábiles | Fuera del país. Incluye trámites de aduana y logística internacional. |
+
+**Sobrecargo por peso:** $15.00 MXN por cada kg que supere los 50 kg, hasta el máximo de 70 kg. Por encima de 70 kg el envío se rechaza.
 
 ### Contrato de errores
 
-*¿Usaste el `ErrorResource` que ya declara el contrato o definiste otra cosa? ¿Es la misma
-forma en los dos endpoints? ¿Cómo reportas varios errores de validación a la vez? ¿Qué
-código HTTP usaste para cada situación y por qué?*
+Se utilizó el `ErrorResource` que ya declara el contrato (en `resources.yaml`), sin modificarlo. La forma es la misma en ambos endpoints.
 
-> **Dato para arrancar:** el contrato ya declara un `ErrorResource` con un campo `detalles`
-> pensado para varios errores a la vez, pero **nadie lo llena todavía**. Si no haces nada, un
-> `@Valid` que falla responde `400` con el cuerpo por defecto de Spring, que **no dice qué
-> campo falló**: `{"timestamp":"...","status":400,"error":"Bad Request","path":"/..."}`.
-> Ese cuerpo es técnicamente correcto, inútil para quien consume tu API, y además contradice
-> lo que tu propio contrato promete. Qué hacer al respecto es tuyo: puedes dejarlo así y
-> justificarlo, llenar el `ErrorResource`, o irte por `ProblemDetail` y actualizar el YAML
-> para que describa lo que la API realmente devuelve.
+Los errores de validación (`@Valid`) llenan el campo `detalles` con todos los campos inválidos de una sola vez — el cliente no tiene que corregir de uno en uno.
 
 | Situación | Código HTTP | Por qué |
 |---|---|---|
-|  |  |  |
+| Campo faltante u obligatorio ausente | `400 Bad Request` | El request está mal formado: le falta información estructural. |
+| Valor fuera del rango del contrato (`pesoKg < 0.01`) | `400 Bad Request` | El contrato declara `minimum: 0.01`; Bean Validation lo rechaza antes de llegar al service. |
+| Destino con valor no reconocido | `400 Bad Request` | El enum del contrato restringe los valores. Jackson rechaza cualquier valor fuera del enum con 400 automáticamente. |
+| Paquete con peso > 70 kg | `422 Unprocessable Entity` | El request está bien formado. Cada campo es válido por separado. Lo que falla es una regla de negocio. |
+| Error interno del servidor | `500 Internal Server Error` | Fallo inesperado, ajeno al cliente. |
+
+**Criterio `400` vs `422`:** `400` cuando el problema está en el *formato* del request (un campo que el contrato no acepta). `422` cuando el request es estructuralmente válido pero incumple una regla de negocio que depende del valor o de la combinación de campos.
 
 ### Inconsistencias detectadas en el enunciado
 
-*¿Encontraste algo en `docs/ENUNCIADO.md` que se contradiga, o reglas que no puedan cumplirse
-las dos a la vez? Descríbelo, di qué interpretación elegiste y por qué.*
+**Contradicción en el peso máximo.** El enunciado dice dos cosas que se contradicen:
 
-*Esta sección se evalúa. Dejarla vacía porque "no vi nada" es una respuesta válida sólo si de
-verdad revisaste; pero si había algo, el silencio cuenta en contra más que haber elegido la
-interpretación "equivocada". No se penaliza interpretar de una forma u otra: se penaliza no
-declarar que hubo una interpretación.*
+> "El peso máximo permitido para cualquier envío es de **50 kg**."
+> "Para paquetes de hasta **70 kg**, se aplica una tarifa especial de sobrepeso **en lugar de rechazar el envío**."
+
+Si el máximo fuera 50 kg, no podría haber paquetes de hasta 70 kg que se acepten con sobrecargo. Se interpretó así: **50 kg es el umbral de sobrecargo** (no el máximo), y **70 kg es el límite absoluto**. Los paquetes entre 50 y 70 kg se aceptan con cargo adicional; los que superan 70 kg se rechazan con `422`.
+
+Esta interpretación hace que las dos reglas sean coherentes entre sí. La alternativa haría que la segunda regla no tuviera ningún efecto.
 
 ### Endpoints implementados
 
 | Método | Ruta | Descripción |
 |---|---|---|
-|  |  |  |
+| `POST` | `/api/v1/cotizaciones` | Cotiza un envío: recibe origen, destino y peso, devuelve costo y tiempo de entrega. |
+| `GET` | `/api/v1/zonas` | Lista las zonas de destino soportadas con su descripción legible. |

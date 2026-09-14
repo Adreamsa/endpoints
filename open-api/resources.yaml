@@ -25,7 +25,7 @@ components:
           example: Orizaba
           description: Lugar desde donde sale el paquete.
         destino:
-          $ref: './enum.yaml#/components/schemas/ZonaEjemplo'
+          $ref: './enum.yaml#/components/schemas/Zona'
         pesoKg:
           type: number
           format: double
@@ -63,7 +63,7 @@ components:
         - descripcion
       properties:
         codigo:
-          $ref: './enum.yaml#/components/schemas/ZonaEjemplo'
+          $ref: './enum.yaml#/components/schemas/Zona'
         descripcion:
           type: string
           example: Envio dentro del territorio nacional

@@ -141,10 +141,12 @@
 								dos lineas.
 							-->
 							<importMappings>
+								<importMapping>Zona=com.teletubies.endpoints.cotizacion.enums.Zona</importMapping>
 								<importMapping>ZonaEjemplo=com.teletubies.endpoints.ejemplo.enums.ZonaEjemplo</importMapping>
 								<importMapping>Moneda=com.teletubies.endpoints.ejemplo.enums.Moneda</importMapping>
 							</importMappings>
 							<schemaMappings>
+								<schemaMapping>Zona=com.teletubies.endpoints.cotizacion.enums.Zona</schemaMapping>
 								<schemaMapping>ZonaEjemplo=com.teletubies.endpoints.ejemplo.enums.ZonaEjemplo</schemaMapping>
 								<schemaMapping>Moneda=com.teletubies.endpoints.ejemplo.enums.Moneda</schemaMapping>
 							</schemaMappings>
