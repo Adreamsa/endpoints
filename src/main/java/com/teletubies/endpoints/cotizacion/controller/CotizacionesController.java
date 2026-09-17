@@ -1,18 +1,20 @@
 package com.teletubies.endpoints.cotizacion.controller;
 
+import com.teletubies.endpoints.cotizacion.dto.CotizacionesRequest;
 import com.teletubies.endpoints.cotizacion.service.CotizacionesService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class CotizacionesController {
     @Autowired
     private CotizacionesService cotizacionesService;
 
-    @GetMapping("/cotizacion")
-    public Double obtenerCotizacion(@RequestParam String tipoEnvio) {
-        return cotizacionesService.obtenerTarifa(tipoEnvio);
+    @PostMapping("/cotizacion")
+    public Double obtenerCotizacion(
+            @Valid @RequestBody CotizacionesRequest request) {
+
+        return cotizacionesService.cotizar(request);
     }
 }

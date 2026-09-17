@@ -33,21 +33,21 @@ public class CotizacionesResponso {
     }
 
     public double getPesoKG() {
-        if (pesoKG == 50){
+        if (pesoKG <= 50) {
             System.out.println("peso valido");
             return pesoKG;
         }
-        if (pesoKG > 50 && pesoKG < 70){
+        if (pesoKG > 50 && pesoKG <= 70) {
             System.out.println("peso valido con costo adicional");
             return pesoKG;
         }
-        if (pesoKG > 70){
-            System.out.println("peso no valido");
-            return 0;
+        if (pesoKG > 70) {
+            throw new IllegalArgumentException("El peso no puede ser mayor a 70 kg");
         }
-        return pesoKG;
-
+        throw new IllegalArgumentException("Peso no válido");
     }
+
+
 
     public double getCostoEstimado() {
         return costoEstimado;

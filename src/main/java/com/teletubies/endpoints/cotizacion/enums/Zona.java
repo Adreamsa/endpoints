@@ -1,17 +1,16 @@
 package com.teletubies.endpoints.cotizacion.enums;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
+@Getter
 public enum Zona {
-    LOCAL("LOCAL"),
-    NACIONAL("NACIONAL"),
-    INTERNACIONAL("INTERNACIONAL");
+    LOCAL("LOCAL", 80.00),
+    NACIONAL("NACIONAL", 100.00),
+    INTERNACIONAL("INTERNACIONAL", 150.00);
 
     private final String value;
+    private final Double tarifa;
 
-    Zona(String value) {
-        this.value = value;
-    }
-
-    public String getValue() {
-        return value;
-    }
 }

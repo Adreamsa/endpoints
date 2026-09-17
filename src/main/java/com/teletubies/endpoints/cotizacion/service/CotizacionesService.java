@@ -2,69 +2,51 @@ package com.teletubies.endpoints.cotizacion.service;
 
 
 import com.teletubies.endpoints.cotizacion.dto.CotizacionesRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
 
+@Slf4j
 @Service
 public class CotizacionesService {
 
+    private static final double COSTO_FIJO = 50.0;
+    private static final double COSTO_ADICIONAL = 20.0;
+    private static final double PESO_MAXIMO = 70.0;
+    private static final double PESO_LIMITE = 50.0;
 
+    public Double cotizar(CotizacionesRequest request) {
 
-    private String envios;
-    private final Map<String, Double>tarifas = Map.of(
-            "LOCAL", 80.0,
-            "NACIONAL", 100.0,
-            "INTERNACIONAL", 150.0
-    );
-
-
-
-    public Double CotizacinesRequest(CotizacionesRequest request){
-
-        String destino = request.getZona().getValue();
-        Double tarifa = tarifas.get(destino);
-        return tarifa != null ? tarifa : 0.0;
-
-
-
-        if (destino == null) {
-            System.out.println("Destino no válido");
-            return 0.0;
-        }
-        if (destino== "LOCAL") {
-            return tarifas.get("LOCAL");
-        } else if (destino == "NACIONAL") {
-            return tarifas.get("NACIONAL");
-        } else if (destino == "INTERNACIONAL") {
-            return tarifas.get("INTERNACIONAL");
-        } else {
-            System.out.println("Destino no válido");
-            return 0.0;
-        }
-
-        double peso = request.getpesoKG();
-        double costoEstimado = tarifa * peso;
-        double costoTotal = costoEstimado + 50; // Agregar un costo fijo de 50
-        return costoTotal;
+        double peso = request.pesoKg();
+        double tarifa = request.zona().getTarifa();
 
         if (peso <= 0) {
-            System.out.println("Peso no válido");
-            return 0.0;
+            throw new IllegalArgumentException("El peso debe ser mayor a 0");
         }
-        if(peso > 50) {
-            System.out.println("Peso valido");
-            return costoTotal;
 
+        if (peso > PESO_MAXIMO) {
+            throw new IllegalArgumentException(
+                    "El peso no puede ser mayor a " + PESO_MAXIMO + " kg"
+            );
         }
-        if (peso > 50 && peso < 70) {
-            System.out.println("Peso valido con costo adicional");
-            return costoTotal + 20; // Agregar un costo adicional de 20
+
+        double costoEstimado = tarifa * peso;
+        double costoTotal = costoEstimado + COSTO_FIJO;
+
+        if (peso > PESO_LIMITE) {
+            costoTotal += COSTO_ADICIONAL;
         }
-        if (peso > 70) {
-            System.out.println("Peso no válido");
-            return 0.0;
+
+        costoTotal = Math.round(costoTotal * 100.0) / 100.0;
+
+        log.info(
+                "Cotización calculada. Zona: {}, Peso: {}, Costo: {}",
+                request.zona(),
+                peso,
+                costoTotal
+        );
+
+        return costoTotal;
     }
 
 
