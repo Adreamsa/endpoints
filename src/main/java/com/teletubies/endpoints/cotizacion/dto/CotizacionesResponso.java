@@ -1,13 +1,20 @@
 package com.teletubies.endpoints.cotizacion.dto;
 
 
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
+
+
+@ToString
+@EqualsAndHashCode
 public class CotizacionesResponso {
-    private String origen;
-    private String destino;
-    private double tarifa;
-    private double pesoKG;
-    private double costoEstimado;
-    private double costoTotal;
+
+    private final String origen;
+    private final String destino;
+    private final double tarifa;
+    private final double pesoKG;
+    private final double costoEstimado;
+    private final double costoTotal;
 
 
     public CotizacionesResponso( String origen, String destino, double tarifa, double pesoKG, double costoEstimado, double costoTotal) {
@@ -20,17 +27,7 @@ public class CotizacionesResponso {
 
     }
 
-    public String getOrigen() {
-        return origen;
-    }
 
-    public String getDestino() {
-        return destino;
-    }
-
-    public double getTarifa() {
-        return tarifa;
-    }
 
     public double getPesoKG() {
         if (pesoKG <= 50) {
@@ -48,14 +45,6 @@ public class CotizacionesResponso {
     }
 
 
-
-    public double getCostoEstimado() {
-        return costoEstimado;
-    }
-
-    public double getCostoTotal() {
-        return costoTotal;
-    }
 
 
 
